@@ -17,6 +17,13 @@ import json
 import traceback
 from http.server import BaseHTTPRequestHandler
 
+# CrewAI's chromadb submodule creates a default storage directory at IMPORT
+# TIME (not when memory/RAG is actually used) -- it assumes it can write to
+# the user's home directory. Vercel's serverless filesystem is read-only
+# except /tmp, so this MUST be set before `from crew import run_news_crew`
+# runs below, or the import itself crashes with a read-only filesystem error.
+os.environ.setdefault("CREWAI_STORAGE_DIR", "/tmp/crewai_storage")
+
 # api/ is one level below the project root where crew.py, agents.py,
 # tasks.py, config.py and tools/ live -- add the root to sys.path so the
 # existing absolute imports in those files keep working unmodified.
