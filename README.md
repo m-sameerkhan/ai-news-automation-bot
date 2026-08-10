@@ -2,16 +2,7 @@
 
 An autonomous multi-agent pipeline that fetches trending news, summarizes it with an LLM, posts it to Slack, and logs it to Google Sheets — running hands-free on a schedule, deployed serverless on Vercel.
 
-</p>
-  <img src="https://img.shields.io/badge/PYTHON-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/FRAMEWORK-CREWAI-1a1a2e?style=for-the-badge" />
- <img src="https://img.shields.io/badge/LLM-GROQ%20LLAMA-F55036?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/NEWS%20SEARCH-SERPER%20%2F%20NEWSAPI-1abc9c?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/MESSAGING-SLACK-4A154B?style=for-the-badge&logo=slack&logoColor=white" />
-  <img src="https://img.shields.io/badge/STORAGE-GOOGLE%20SHEETS-0F9D58?style=for-the-badge&logo=googlesheets&logoColor=white" />
-  <img src="https://img.shields.io/badge/DEPLOY-VERCEL-000000?style=for-the-badge&logo=vercel&logoColor=white" />
-  <img src="https://img.shields.io/badge/SCHEDULER-GITHUB%20ACTIONS-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
-</p>
+<img src="https://img.shields.io/badge/PYTHON-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" /> <img src="https://img.shields.io/badge/FRAMEWORK-CREWAI-1a1a2e?style=for-the-badge" /> <img src="https://img.shields.io/badge/LLM-GROQ%20LLAMA-F55036?style=for-the-badge" /> <img src="https://img.shields.io/badge/NEWS%20SEARCH-SERPER%20%2F%20NEWSAPI-1abc9c?style=for-the-badge" /> <img src="https://img.shields.io/badge/MESSAGING-SLACK-4A154B?style=for-the-badge&logo=slack&logoColor=white" /> <img src="https://img.shields.io/badge/STORAGE-GOOGLE%20SHEETS-0F9D58?style=for-the-badge&logo=googlesheets&logoColor=white" /> <img src="https://img.shields.io/badge/DEPLOY-VERCEL-000000?style=for-the-badge&logo=vercel&logoColor=white" /> <img src="https://img.shields.io/badge/SCHEDULER-GITHUB%20ACTIONS-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
 
 ---
 
