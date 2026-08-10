@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/run-pipeline.py": {
+      "maxDuration": 300,
+      "memory": 2048
+    }
+  }
+}

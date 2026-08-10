@@ -1,0 +1,7 @@
+setuptools<81
+crewai==1.9.3
+litellm<1.60
+httpx
+gspread==6.1.4
+google-auth==2.36.0
+python-dotenv~=1.1.1
