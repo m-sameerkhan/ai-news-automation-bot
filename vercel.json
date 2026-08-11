@@ -3,5 +3,11 @@
     "api/run-pipeline.py": {
       "maxDuration": 300
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/run-pipeline?format=json",
+      "schedule": "0 8 * * *"
+    }
+  ]
 }

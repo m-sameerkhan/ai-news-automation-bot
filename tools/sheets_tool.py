@@ -86,3 +86,27 @@ class SheetsLoggerTool(BaseTool):
         ]
         sheet.append_row(row)
         return {"written": True, "headline": headline}
+    
+def read_recent_stories(limit: int = 30) -> List[dict]:
+    """
+    Read-only helper for the dashboard feed -- NOT a CrewAI tool, just a plain
+    function the API endpoint calls directly. Returns the most recently
+    logged stories, newest first, reusing the same authenticated worksheet
+    connection as the logger above.
+    """
+    sheet = _get_sheet()
+    records = sheet.get_all_records()  # header row -> dict per row, oldest first
+    records = records[-limit:]
+    records.reverse()
+
+    items = []
+    for r in records:
+        raw_sources = str(r.get("source_urls", ""))
+        items.append({
+            "date": r.get("date", ""),
+            "topic": r.get("topic", ""),
+            "headline": r.get("headline", ""),
+            "summary": r.get("summary", ""),
+            "source_urls": [u for u in raw_sources.split("|") if u],
+        })
+    return items

@@ -61,10 +61,16 @@ LLM = config.LLM_MODEL  # e.g. "groq/openai/gpt-oss-20b"
 def build_agents():
     news_fetcher_agent = Agent(
         role="News Fetcher",
-        goal="Pull the freshest, most relevant headlines for the configured topics.",
+        goal=(
+            "Pull the freshest, most relevant headlines for EXACTLY the topic list given "
+            "in the current task -- never substitute a default or previously-used topic "
+            "list. The topics to search are whatever the task says, every single run."
+        ),
         backstory=(
-            "A wire-service scanner that never sleeps. Cares only about recency and "
-            "relevance."
+            "A wire-service scanner that never sleeps, and never assumes it already knows "
+            "the beat. Each shift hands it a fresh topic list, and it searches only that "
+            "list -- never its own memory of past assignments. Cares only about recency "
+            "and relevance to the topics it was just given."
         ),
         tools=[NewsFetcherTool()],
         llm=LLM,

@@ -28,6 +28,15 @@ class NewsFetcherTool(BaseTool):
     args_schema: Type[BaseModel] = NewsFetcherInput
 
     def _run(self, topics: List[str], max_per_topic: int = 8) -> List[dict]:
+        # Don't trust the agent's tool call to actually respect the
+        # MAX_PER_TOPIC instruction in the task description -- that's just
+        # prose, and smaller/faster models routinely ignore numeric
+        # constraints that only live in text. Enforce a hard ceiling here
+        # instead, so your .env setting is always the real limit no matter
+        # what value the LLM decides to pass.
+        if config.MAX_PER_TOPIC:
+            max_per_topic = min(max_per_topic, config.MAX_PER_TOPIC)
+
         if config.SERPER_API_KEY:
             return self._fetch_serper(topics, max_per_topic)
         if config.NEWSAPI_API_KEY:
