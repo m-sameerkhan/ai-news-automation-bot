@@ -11,11 +11,6 @@ def build_tasks(agents: dict, topics: list | None = None, max_per_topic: int | N
     topics = topics if topics else config.NEWS_TOPICS
     max_per_topic = max_per_topic if max_per_topic else config.MAX_PER_TOPIC
 
-    # Rendered as plain comma-separated text, not a Python list repr --
-    # "spacex" reads unambiguously as one topic; ['spacex'] can get
-    # misparsed or blended with the agent's own "configured topics" framing
-    # by smaller/faster models. Repeating the instruction and explicitly
-    # forbidding substitution closes that gap.
     topics_list_text = ", ".join(topics)
 
     fetch_task = Task(
@@ -28,7 +23,10 @@ def build_tasks(agents: dict, topics: list | None = None, max_per_topic: int | N
             "topics mentioned in your own role description or past runs. Use only the "
             "topic list given in this task."
         ),
-        expected_output="A JSON list of article dicts (title, source, url, published_at, topic).",
+        expected_output=(
+            "A JSON list of article dicts (title, source, url, published_at, topic). "
+            "This list may be empty if nothing new was found."
+        ),
         agent=agents["news_fetcher"],
     )
 

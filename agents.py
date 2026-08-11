@@ -13,8 +13,6 @@ import litellm
 litellm.num_retries = 10
 litellm.request_timeout = 120
 
-# Wrap litellm.completion to catch Groq rate limit (TPM/RPM 429) errors, parse
-# Groq's wait time hint ("try again in Xs"), and wait automatically.
 _RETRY_SECONDS_RE = re.compile(r"try again in ([\d.]+)s", re.IGNORECASE)
 _original_completion = litellm.completion
 

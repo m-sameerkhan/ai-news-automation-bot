@@ -7,16 +7,27 @@ published story so the Sheet is a simple, append-only record of everything
 the bot has posted.
 
 Sheet columns (single tab): date | topic | headline | summary | source_urls
+
+Dedup is headline-based, not URL-based -- aggregator source links (Google
+News redirects, etc.) can vary per fetch even for the same story, and
+relying on an LLM agent to remember to call a separate dedup tool proved
+unreliable, so filtering now happens deterministically inside
+NewsFetcherTool itself, using get_recent_headlines() below.
 """
 import json
-from datetime import datetime, timezone
-from typing import List, Type
+import re
+from datetime import datetime, timezone, timedelta
+from typing import List, Type, Set
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from config import config
 
 COLUMNS = ["date", "topic", "headline", "summary", "source_urls"]
+
+# How far back to look when checking for duplicate articles. Override with
+# DEDUP_WINDOW_HOURS in env if you want a tighter/looser window than 48h.
+_DEFAULT_DEDUP_WINDOW_HOURS = 48
 
 _client = None
 _sheet = None
@@ -34,10 +45,8 @@ def _get_sheet():
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
 
     if config.GOOGLE_SERVICE_ACCOUNT_PATH:
-        # Local/dev-friendly: a path to the service account JSON key file.
         creds = Credentials.from_service_account_file(config.GOOGLE_SERVICE_ACCOUNT_PATH, scopes=scopes)
     elif config.GOOGLE_SERVICE_ACCOUNT_JSON:
-        # CI/serverless-friendly: the full JSON contents as a single env var.
         info = json.loads(config.GOOGLE_SERVICE_ACCOUNT_JSON)
         creds = Credentials.from_service_account_info(info, scopes=scopes)
     else:
@@ -60,6 +69,62 @@ def _get_sheet():
     return _sheet
 
 
+def _dedup_window_hours() -> int:
+    try:
+        return int(config.__dict__.get("DEDUP_WINDOW_HOURS", _DEFAULT_DEDUP_WINDOW_HOURS))
+    except (TypeError, ValueError):
+        return _DEFAULT_DEDUP_WINDOW_HOURS
+
+
+def _normalize_headline(headline: str) -> str:
+    """Lowercase, strip punctuation/extra whitespace so near-identical
+    headlines match even with minor formatting differences between fetches."""
+    h = headline.lower().strip()
+    h = re.sub(r"[^\w\s]", "", h)
+    h = re.sub(r"\s+", " ", h)
+    return h
+
+
+def get_recent_headlines(hours: int = None) -> Set[str]:
+    """
+    Returns a set of normalized headlines logged within the last `hours`
+    (defaults to DEDUP_WINDOW_HOURS / 48h). Called from NewsFetcherTool
+    before returning results, so duplicate stories never reach the
+    summarizer, publisher, or logger agents.
+    """
+    if hours is None:
+        hours = _dedup_window_hours()
+
+    sheet = _get_sheet()
+    records = sheet.get_all_records()
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    headlines: Set[str] = set()
+    for r in records:
+        raw_date = str(r.get("date", ""))
+        if not raw_date:
+            continue
+        try:
+            dt = datetime.fromisoformat(raw_date.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if dt < cutoff:
+            continue
+        h = str(r.get("headline", ""))
+        if h:
+            headlines.add(_normalize_headline(h))
+    return headlines
+
+
+def is_duplicate_article(headline: str, hours: int = None) -> bool:
+    """True if this headline (normalized) was already logged within the
+    dedup window. Used as a final safety net in SheetsLoggerTool."""
+    recent = get_recent_headlines(hours=hours)
+    return _normalize_headline(headline) in recent
+
+
 class LogSummaryInput(BaseModel):
     topic: str = Field(..., description="Topic the story was fetched under, e.g. 'AI'")
     headline: str = Field(..., description="Story headline")
@@ -71,11 +136,18 @@ class SheetsLoggerTool(BaseTool):
     name: str = "log_to_sheet"
     description: str = (
         "Appends a row to the Google Sheet with date, topic, headline, summary, "
-        "and source links, for record-keeping of every story processed."
+        "and source links, for record-keeping of every story processed. "
+        "Skips silently if the headline was already logged recently."
     )
     args_schema: Type[BaseModel] = LogSummaryInput
 
     def _run(self, topic: str, headline: str, summary: str, source_urls: List[str]) -> dict:
+        # Safety net: even though NewsFetcherTool now filters duplicates
+        # before summarization, never write a duplicate row regardless of
+        # how an article got this far.
+        if is_duplicate_article(headline):
+            return {"written": False, "headline": headline, "reason": "duplicate_headline"}
+
         sheet = _get_sheet()
         row = [
             datetime.now(timezone.utc).isoformat(),
@@ -86,7 +158,8 @@ class SheetsLoggerTool(BaseTool):
         ]
         sheet.append_row(row)
         return {"written": True, "headline": headline}
-    
+
+
 def read_recent_stories(limit: int = 30) -> List[dict]:
     """
     Read-only helper for the dashboard feed -- NOT a CrewAI tool, just a plain
@@ -95,7 +168,7 @@ def read_recent_stories(limit: int = 30) -> List[dict]:
     connection as the logger above.
     """
     sheet = _get_sheet()
-    records = sheet.get_all_records()  # header row -> dict per row, oldest first
+    records = sheet.get_all_records()
     records = records[-limit:]
     records.reverse()
 
