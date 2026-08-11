@@ -25,9 +25,6 @@ from config import config
 
 COLUMNS = ["date", "topic", "headline", "summary", "source_urls"]
 
-# How far back to look when checking for duplicate articles. Override with
-# DEDUP_WINDOW_HOURS in env if you want a tighter/looser window than 48h.
-_DEFAULT_DEDUP_WINDOW_HOURS = 48
 
 _client = None
 _sheet = None
@@ -70,10 +67,7 @@ def _get_sheet():
 
 
 def _dedup_window_hours() -> int:
-    try:
-        return int(config.__dict__.get("DEDUP_WINDOW_HOURS", _DEFAULT_DEDUP_WINDOW_HOURS))
-    except (TypeError, ValueError):
-        return _DEFAULT_DEDUP_WINDOW_HOURS
+    return config.DEDUP_WINDOW_HOURS
 
 
 def _normalize_headline(headline: str) -> str:

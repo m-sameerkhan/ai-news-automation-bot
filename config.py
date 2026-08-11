@@ -36,6 +36,12 @@ class Config:
     # MAX_PER_TOPIC / NEWS_TOPICS) if you're still hitting rate limits.
     SUMMARY_DELAY_SECONDS = float(os.environ.get("SUMMARY_DELAY_SECONDS", "5"))
 
+    # How far back (in hours) NewsFetcherTool looks when checking whether a
+    # headline was already logged, before deciding an article is genuinely
+    # new. Raise this if you want a longer "don't repeat" memory; lower it
+    # if a fast-moving topic keeps getting incorrectly skipped as a dupe.
+    DEDUP_WINDOW_HOURS = int(os.environ.get("DEDUP_WINDOW_HOURS", "48"))
+
     SHEET_TAB = "news_log"
 
 
