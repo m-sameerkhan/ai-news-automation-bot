@@ -9,5 +9,8 @@
       "path": "/api/run-pipeline?format=json",
       "schedule": "0 8 * * *"
     }
+  ],
+  "rewrites": [
+    { "source": "/", "destination": "/api/run-pipeline" }
   ]
 }
