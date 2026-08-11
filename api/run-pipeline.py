@@ -47,6 +47,17 @@ from urllib.parse import urlparse, parse_qs
 # before `from crew import run_news_crew` runs, or the import itself crashes.
 os.environ.setdefault("CREWAI_STORAGE_DIR", "/tmp/crewai_storage")
 
+# Separately, newer CrewAI versions also try to write an auth/telemetry
+# credentials file to ~/.local/share/crewai/credentials at import time (via
+# TokenManager), which resolves against $HOME -- not CREWAI_STORAGE_DIR.
+# Vercel DOES set HOME (e.g. to /home/sbx_user1051), it's just not writable --
+# so this must be a hard override, not setdefault, or Vercel's existing value
+# would win and the crash would persist. Only override when we detect we're
+# on Vercel (VERCEL env var is always set there) so local runs keep using the
+# real HOME.
+if os.environ.get("VERCEL"):
+    os.environ["HOME"] = "/tmp"
+
 # api/ is one level below the project root where crew.py, agents.py, etc.
 # live -- add both dirs to sys.path so imports keep working unmodified.
 _HERE = os.path.dirname(__file__)
